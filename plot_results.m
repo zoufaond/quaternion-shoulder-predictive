@@ -3,12 +3,12 @@ addpath Matlab_functions/
 
 
 %% Plot the computational performance and display the RMS errors - Fig. 2
-computational_performance_eul_vs_quat
+% computational_performance_eul_vs_quat
 
 %% Print the tracking statistics, EMG validations and validation tracking
-res = tracking_statistics();
-calibration_activation_RMSE
-res = RMSE_calibration;
+% res = tracking_statistics();
+% calibration_activation_RMSE
+% res = RMSE_calibration;
 
 %%  Plot the activations of two elements affected by gimbal lock - Fig. 3
 
@@ -103,16 +103,16 @@ plot_IEEE_kinematics(OS_struct,0,'Figures/RClim0_calibrations_SA',res_q1,res_q2,
 % res_q5 = {['res_SHR_supra0_All_elevations_wGH4'],'quat',motion_name,'YZY',participant,'Supra=0% wGH=4',cap_colors_RClim(5,:),1};
 % plot_IEEE_kinematics(OS_struct,0,'',res_q1,res_q2,res_q3,res_q4,res_q5);
 
-% participant = 'par2';
-% OS_model = ['Motions/',participant,'/OS_model.mat'];
-% motion_name = 'All_elevations';
-% OS_struct = load(['Motions/',participant,'/',motion_name,'/',motion_name,'.mat']);
-% res_q1 = {['res_SHR_0'],'quat',motion_name,'YZY',participant,'Full capacity wGH=2',cap_colors_RClim(1,:),1};
-% res_q2 = {['res_SHR_infra75_All_elevations_wGH2'],'quat',motion_name,'YZY',participant,'Infra=75% wGH=2',cap_colors_RClim(2,:),1};
-% res_q3 = {['res_SHR_infra50_All_elevations_wGH2'],'quat',motion_name,'YZY',participant,'Infra=50% wGH=2',cap_colors_RClim(3,:),1};
-% res_q4 = {['res_SHR_infra25_All_elevations_wGH4'],'quat',motion_name,'YZY',participant,'Infra=25% wGH=2',cap_colors_RClim(4,:),1};
-% res_q5 = {['res_SHR_infra0_All_elevations_wGH6'],'quat',motion_name,'YZY',participant, 'Infra=0% wGH=4',cap_colors_RClim(5,:),1};
-% plot_IEEE_kinematics(OS_struct,0,'',res_q1,res_q2,res_q3,res_q4,res_q5);
+participant = 'par2';
+OS_model = ['Motions/',participant,'/OS_model.mat'];
+motion_name = 'All_elevations';
+OS_struct = load(['Motions/',participant,'/',motion_name,'/',motion_name,'.mat']);
+res_q1 = {['res_SHR_0'],'quat',motion_name,'YZY',participant,'Full capacity wGH=2',cap_colors_RClim(1,:),1};
+res_q2 = {['res_SHR_infra75_All_elevations_wGH2'],'quat',motion_name,'YZY',participant,'Infra=75% wGH=2',cap_colors_RClim(2,:),1};
+res_q3 = {['res_SHR_infra50_All_elevations_wGH2'],'quat',motion_name,'YZY',participant,'Infra=50% wGH=2',cap_colors_RClim(3,:),1};
+res_q4 = {['res_SHR_infra25_All_elevations_wGH4'],'quat',motion_name,'YZY',participant,'Infra=25% wGH=2',cap_colors_RClim(4,:),1};
+res_q5 = {['res_SHR_infra0_All_elevations_wGH6'],'quat',motion_name,'YZY',participant, 'Infra=0% wGH=4',cap_colors_RClim(5,:),1};
+plot_IEEE_kinematics(OS_struct,0,'',res_q1,res_q2,res_q3,res_q4,res_q5);
 
 % participant = 'par2';
 % OS_model = ['Motions/',participant,'/OS_model.mat'];
@@ -125,7 +125,7 @@ plot_IEEE_kinematics(OS_struct,0,'Figures/RClim0_calibrations_SA',res_q1,res_q2,
 % res_q5 = {['res_SHR_RClim0_All_elevations_wGH10'],'quat',motion_name,'YZY',participant,' Supra+Infra=0% wGH=10',cap_colors_RClim(5,:),1};
 % plot_IEEE_kinematics(OS_struct,0,'',res_q1,res_q2,res_q3,res_q4,res_q5);
 
-%% Print joint torque capacity - Supplementary Section SVIII
+%% Print joint torque capacity - Supplementary Section SVII
 res = plot_torque_capacity();
 
 function results = plot_torque_capacity(cfg)
@@ -1128,15 +1128,17 @@ info = struct('phase', phaseEdges, 'n', z, 'slope', z, 'R2', z, ...
 % ----------------------------------------------------------------- loop
 for i = 1:nPhases
 
-    idx = TH >= phaseEdges(i,1) & TH <= phaseEdges(i,2);
-    n   = nnz(idx);
-    info.n(i) = n;
+    % idx = TH >= phaseEdges(i,1) & TH <= phaseEdges(i,2);
+    % n   = nnz(idx);
+    % info.n(i) = n;
 
-    if n < minSamp
-        continue
-    end
 
-    ts = TS(idx);  gh = GH(idx);  th = TH(idx);
+    % ts = TS(idx);  gh = GH(idx);  th = TH(idx);
+    e  = phaseEdges(i,:);
+    in = TH > e(1) & TH < e(2);
+    th = [e(1); TH(in); e(2)];
+    ts = [interp1(TH,TS,e(1)); TS(in); interp1(TH,TS,e(2))];
+    gh = [interp1(TH,GH,e(1)); GH(in); interp1(TH,GH,e(2))];
 
     info.netTH(i)  = th(end) - th(1);
     info.netTS(i)  = ts(end) - ts(1);
@@ -1144,6 +1146,9 @@ for i = 1:nPhases
     info.spanTS(i) = max(ts) - min(ts);
     info.maxTS(i) = ts(end);
     info.minTS(i) = ts(1);
+
+    n = numel(ts);
+    info.n(i) = n;
 
     % How much of the phase moves against the net TS direction. A large
     % value means max-min is not measuring the net rotation.
@@ -1604,22 +1609,6 @@ function res = rotm2yzy_shoulder(R)
     res = [y1,z,y2]*pi/180;
 end
 
-function res = create_objective_traj_quat(trajectory,OS_model)
-    res = zeros(size(trajectory));
-    model = load(OS_model);
-    AC_offset = model.model.joints{1,5}.location;
-    for istep = 1:size(trajectory,1)
-        AC_pos = Qrm(trajectory(istep,1:4)) * [AC_offset(1);AC_offset(2);AC_offset(3);1];
-        scapula_thorax = mulQuat(trajectory(istep,1:4),trajectory(istep,5:8));
-        humerus_thorax = mulQuat(scapula_thorax,trajectory(istep,(9:12)));
-        res(istep,1:3) = AC_pos(1:3);
-        res(istep,5:8) = scapula_thorax;
-        res(istep,9:12) = humerus_thorax;
-    end
-    res(:,13) = trajectory(:,13);
-end
-
-
 function time_positions = find_gimbal_lock(time,angles)
     numdata = length(angles);
     time_positions = [];
@@ -1712,10 +1701,6 @@ for imot = 1:nMot
         fpath = fullfile(cfg.root, cfg.participant, motion, ...
                          ['res_' motion '_' cfg.calibrations{ical} '.mat']);
 
-        if ~isfile(fpath)
-            warning('Missing file: %s', fpath);
-            continue
-        end
 
         S    = load(fpath);
         t    = S.data.tout;
@@ -1762,12 +1747,8 @@ printBlock('EULER COMPONENT RMSE [deg]', ...
 printBlock('BIAS [deg]', ...
            cfg.calibNames, cfg.dofNames, results.mean.bias);
 
-fprintf('\nAveraged over %d validation trials: %s\n', ...
-        nMot, strjoin(cfg.motions, ', '));
-
 end
 
-% ========================================================================
 function ang = geodesicError(eulSim, eulRef, seq)
 n = size(eulSim,1);
 ang = nan(n,1);
@@ -1780,7 +1761,6 @@ end
 end
 
 
-% ========================================================================
 function printBlock(hdr, rowNames, colNames, M)
 % M is nRows by nCols
 fprintf('\n%s\n%s\n', hdr, repmat('-', 1, 20 + 11*numel(colNames)));
@@ -1834,7 +1814,6 @@ nDOF = numel(cfg.dofCols);
 nSeg = numel(cfg.segCols);
 nTr  = nPar * nMot;
 
-% ------------------------------------------------------------- preallocate
 Z  = nan(nTr, nDOF);
 Zs = nan(nTr, nSeg);
 blank  = struct('rmse',Z,'maxabs',Z,'bias',Z,'rom',Z);
@@ -1847,7 +1826,6 @@ results.trial.label     = cell(nTr,1);
 
 iTr = 0;
 
-% ------------------------------------------------------------------- loop
 for ipar = 1:nPar
     for imot = 1:nMot
 
@@ -1943,9 +1921,6 @@ for imot = 1:nMot
     printGeoValidation(cfg.segNames, results, results.trial.motionIdx == imot);
 end
 
-fprintf(['\nMarker RMSE and maximum marker error are a separate quantity\n' ...
-         'and are taken from the OpenSim inverse kinematics output.\n\n']);
-
 end
 
 % ========================================================================
@@ -1953,7 +1928,15 @@ function printComponents(names, results, idx)
 for j = 1:numel(names)
     e = results.trial.euler.rmse(idx,j);
     q = results.trial.quat.rmse(idx,j);
-    [lo,hi] = ci95(q - e);
+    d    = q - e;
+    n = numel(d);
+    if n == 9
+        dPar = mean(reshape(d, 3, 3), 1);
+    else
+        dPar = d;
+    end
+    % [lo,hi] = ci95(q - e);
+    [lo,hi] = ci95(dPar(:));
     fprintf('%-18s %8.1f %7.2f +/- %-6.2f %7.2f +/- %-6.2f %7.2f [%5.2f,%5.2f] %8.2f %8.2f\n', ...
         names{j}, mean(results.trial.euler.rom(idx,j)), ...
         mean(e), std(e), mean(q), std(q), mean(q-e), lo, hi, ...
@@ -1963,8 +1946,6 @@ end
 end
 
 
-
-% ========================================================================
 function [lo,hi] = ci95(d)
 
 n  = numel(d);
@@ -1978,7 +1959,15 @@ function printGeoValidation(names, results, idx)
 for j = 1:numel(names)
     e = results.geo.euler.rmse(idx,j);
     q = results.geo.quat.rmse(idx,j);
-    [lo,hi] = ci95(q - e);
+    d    = q - e;
+    n = numel(d);
+    if n == 9
+        dPar = mean(reshape(d, 3, 3), 1);
+    else
+        dPar = d;
+    end
+    % [lo,hi] = ci95(q - e);
+    [lo,hi] = ci95(dPar(:));
     fprintf('%-20s %7.2f +/- %-6.2f %7.2f +/- %-6.2f %7.2f [%5.2f,%5.2f]\n', ...
         names{j}, mean(e), std(e), mean(q), std(q), mean(q-e), lo, hi);
 end
